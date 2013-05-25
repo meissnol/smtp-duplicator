@@ -1,0 +1,111 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <syslog.h>
+
+
+#include "duplicator.h"
+#include "configfile.h"
+#include "smtprelay.h"
+#include "main.h"
+
+/* globals */
+int dp_ServerSock = 0; //my own socket to server
+
+int duplicator_OpenServerSocket() {
+    struct addrinfo hints, *servinfo, *p;
+    int rv, yes=1;
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    //hints.ai_flags = NULL; // use my IP
+
+    if ((rv = getaddrinfo(smtpConfigFile->fwd_addr, 
+                          smtpConfigFile->fwd_port, 
+                          &hints, 
+                          &servinfo)) != 0) {
+        syslog(LOG_ERR, "getaddrinfo: %s\n", gai_strerror(rv));
+        return -1;
+    }
+
+    // loop through all the results and bind to the first we can
+    for(p = servinfo; p != NULL; p = p->ai_next) {
+        if ((dp_ServerSock = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) {
+            perror("server: socket");
+            continue;
+        }
+        if (setsockopt(dp_ServerSock, SOL_SOCKET, SO_REUSEADDR, &yes,
+                sizeof(int)) == -1) {
+            perror("server: setsockopt");
+            return(-1);
+        }
+        if (connect(dp_ServerSock, p->ai_addr, p->ai_addrlen) == -1) {
+            close(dp_ServerSock);
+            perror("server: connect");
+            continue;
+        }
+        break;
+    }
+
+    if (p == NULL)  {
+        syslog(LOG_ERR, "duplicator: failed to connect to mailserver @host:%s; port:%s\n", 
+                        smtpConfigFile->fwd_addr, smtpConfigFile->fwd_port);
+        return -2;
+    }
+ 
+  return(0);
+}
+
+int duplicator_CloseServerSocket() {
+  if (dp_ServerSock) {
+     close(dp_ServerSock);
+  }
+  return(0);
+}
+
+int duplicator_handleRelayMsg(struct SMTPSession *session) {
+    int nWrite = 0, nRead = 0;
+    if (session->event == hmsg_RelayFromClientToServer) {
+       switch(*session->currState) {
+         case ss_Connect:
+             //fprintf(stderr, "on CONNECT in duplicator_handleRelayMsg)\n");
+  	         if (duplicator_OpenServerSocket() != 0) {
+          
+             }
+             break;
+  	 case ss_CleanUp:
+             //fprintf(stderr, "on CLEANUP in duplicator_handleRelayMsg)\n");
+             duplicator_CloseServerSocket();
+             break;
+         default:
+             //relay the message and wait for reply...
+             nWrite = 0;
+             char tbuffer[BUFSIZE+1];
+             while (
+                (nWrite += write(dp_ServerSock, session->data, session->dataSize)) < 
+                  session->dataSize);
+             do {
+                bzero(tbuffer, BUFSIZE); 
+                nRead += smtprelay_readline(dp_ServerSock, tbuffer, BUFSIZE-1);
+             } while (tbuffer[3] == '-');
+       }
+    }
+
+    if (session->event == hmsg_SendFromClientToServer ) {
+       if (*session->currState == ss_Data) {
+  	       //relay the msg...
+           write(dp_ServerSock, session->data, session->dataSize);
+       }
+	}
+	return(0);
+}
+

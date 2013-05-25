@@ -1,0 +1,58 @@
+[indentation]
+indent_width=4
+indent_type=0
+indent_hard_tab_width=8
+detect_indent=false
+indent_mode=3
+detect_indent_width=false
+
+[project]
+name=duplicator
+base_path=/home/olly/Projekte/duplicator/src
+description=
+file_patterns=
+
+[long line marker]
+long_line_behaviour=1
+long_line_column=72
+
+[files]
+current_page=3
+FILE_NAME_0=4430;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fmain.c;0;4
+FILE_NAME_1=0;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fconfigfile.c;0;4
+FILE_NAME_2=0;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fduplicator.c;0;4
+FILE_NAME_3=16117;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fsmtprelay.c;0;4
+FILE_NAME_4=97;Conf;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fduplicator.cfg;0;4
+
+[build-menu]
+NF_00_LB=_Make
+NF_00_CM=make all
+NF_00_WD=%p
+NF_01_LB=Make (eigenes _Target)
+NF_01_CM=make 
+NF_01_WD=%p
+NF_02_LB=Make _Objekt-Datei
+NF_02_CM=make %e.o
+NF_02_WD=%p
+NF_03_LB=
+NF_03_CM=
+NF_03_WD=%p
+CFT_00_LB=_Kompilieren
+CFT_00_CM=gcc -Wall -c "%f"
+CFT_00_WD=%p
+CFT_01_LB=_Erstellen
+CFT_01_CM=gcc -Wall -o "%e" "%f"
+CFT_01_WD=%p
+filetypes=C;
+EX_00_LB=_Ausführen
+EX_00_CM="./duplicator" -d -f %d/duplicator.cfg
+EX_00_WD=%p
+
+[file_prefs]
+final_new_line=true
+ensure_convert_new_lines=false
+strip_trailing_spaces=true
+replace_tabs=true
+
+[VTE]
+last_dir=/home/olly/Projekte/oss.ccwf.de/ldapmapper

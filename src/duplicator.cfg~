@@ -1,0 +1,5 @@
+listen_port 5001
+listen_addr
+forward_port 25
+forward_addr imhotep.olly.local
+mapfile mapfile.map

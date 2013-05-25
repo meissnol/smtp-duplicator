@@ -1,0 +1,55 @@
+.TH duplicator 8 "September 2011" "version 0.1" "USER COMMANDS"
+.SH NAME
+duplicator - clone an smtp stream to another host anywhere in the world
+.SH SYNOPSIS
+.B lduplicator
+[\-f <filename>] [\-v[v]] [\-c] [\-l] [\-h]
+.SH DESCRIPTION
+bla
+bla
+.PP
+bla
+bla
+.SH OPTIONS
+.TP
+\-h
+display a short help text
+.TP
+\-f filename
+use the in filename given file as configuration
+.TP
+\-v
+be verbose
+.TP
+\-vv
+be more verbose
+.TP
+\-l
+show license text
+.TP
+\-c
+shows an example configuration file
+.SH EXAMPLES
+.TP
+run duplicator with configuration file test.cfg and be verbose
+.B duplicator
+\-f test.cfg \-v
+.PP
+.TP
+run duplicator in "woman mode":
+.B duplicator
+\-vv
+.PP
+.SH EXIT STATUS
+duplicator returns zero if it succeeds to create
+the mapfiles. Non zero is returned in case of failure.
+.SH AUTHOR
+Oliver Meissner <oliver@la-familia-grande.de>
+.SH "REPORTING BUGS"
+Report bugs to <oliver@la-familia-grande.de>.
+.SH COPYRIGHT
+Copyright \(co 2011 Oliver Meissner.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.

@@ -1,0 +1,20 @@
+-------------------
+| main            |
+-------------------
+| * daemon-control|      ---------------------------
+| * configfile    |      | smtprelay               |
+|--------------------------------------------------|
+|handle_newClient         smtprelay_ClientConnect  |
+---------------------------------------------------|
+                         | * smtp-protocol         |
+                         | * relay-control         |    ---------------------------- 
+                         |   to fwd-host           |    | duplicator               |
+                         |----------------------------------------------------------
+                         |smtprelay_handleRelayMsg        duplicator_handleRelayMsg|
+                         -----------------------------------------------------------
+                                                        | * duplicates the         |
+                                                        |   original message to    |
+                                                        |   another fwd-host       |
+                                                        |   session                |
+                                                        ----------------------------
+
