@@ -32,6 +32,18 @@ void dump_configfile(smtp_configfile* cfg) {
   syslog(LOG_INFO, "fwd_addr:    %s\n", cfg->fwd_addr);
   syslog(LOG_INFO, "fwd_port:    %s\n", cfg->fwd_port);
   syslog(LOG_INFO, "mapfile:     %s\n", cfg->mapfile);
+  if (cfg->mappings) {
+      llItem * itm = cfg->mappings->first;
+      smtp_mapEntry* tmp = (smtp_mapEntry*)malloc(sizeof(smtp_mapEntry));
+      int i = 0;
+      while (itm) {
+          llPop(cfg->mappings, itm, tmp);
+          syslog(LOG_INFO, "mapping(%d): from='%s', to='%s', result='%s'\n",
+                           i++, tmp->me_From, tmp->me_To, tmp->me_Result);
+          itm = itm->next;
+      }
+      free(tmp);
+  }
 }
 
 void free_configfile(smtp_configfile* cfg) {
@@ -40,6 +52,7 @@ void free_configfile(smtp_configfile* cfg) {
   free(cfg->fwd_addr);
   free(cfg->fwd_port);
   free(cfg->mapfile);
+  llFree(&cfg->mappings);
   free(cfg);
   cfg=NULL;
 }
@@ -163,7 +176,7 @@ int parse_config_mapfile(smtp_configfile* config) {
   rewind(cFile);
 
   while( (nRet=getline(gptr, t, cFile)) > 0) {
-      fputs(*gptr,stdout);
+      //fputs(*gptr,stdout);
       chomp(*gptr);
       int wrdcnt = splitQuotedStr(*gptr, del, (1 << FL_DLMFLD), -1, &words);
       if (wrdcnt == 3) {
@@ -177,23 +190,15 @@ int parse_config_mapfile(smtp_configfile* config) {
         strcpy(tmp->me_Result, words[2]);
         llPush(config->mappings, tmp);
         free(tmp);
-        fprintf(stdout, "pushed item to list.\n");
       } else {
-           fprintf(stdout, "\nERROR found malformed line in mapfile: %s\n", *gptr);
+           syslog(LOG_WARNING, "WARNING: found malformed line in mapfile: %s\n", *gptr);
       }
       for (i = 0; i < wrdcnt; i++)
         if (words[i]) free(words[i]);
   }
-  fprintf(stdout, "\nfertig\n");
   free(t);
   free(words);
   fclose(cFile);
-  llItem *itm = config->mappings->first;
-  while (itm) {
-      fprintf(stdout, "item: from=%s; to=%s; result=%s\n", ((smtp_mapEntry*)itm->data_ptr)->me_From, ((smtp_mapEntry*)itm->data_ptr)->me_To, ((smtp_mapEntry*)itm->data_ptr)->me_Result);
-      itm = itm->next;
-  }
-  llFree(&config->mappings);
   return result;
 }
 

@@ -35,7 +35,7 @@ int llInit(llList **list, size_t dataSize) {
 }
 
 /* llFree
- * housecleaning for llIsts
+ * housecleaning for llLists
  */
 void llFree(llList **list) {
     if (*list) {

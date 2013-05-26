@@ -18,12 +18,12 @@ long_line_column=72
 
 [files]
 current_page=1
-FILE_NAME_0=605;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fmain.c;0;4
-FILE_NAME_1=5249;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fconfigfile.c;0;4
+FILE_NAME_0=1529;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fmain.c;0;4
+FILE_NAME_1=4811;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fconfigfile.c;0;4
 FILE_NAME_2=0;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fduplicator.c;0;4
 FILE_NAME_3=13432;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fsmtprelay.c;0;4
-FILE_NAME_4=97;Conf;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fduplicator.cfg;0;4
-FILE_NAME_5=380;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fconfigfile.h;0;4
+FILE_NAME_4=1;Conf;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fduplicator.cfg;0;4
+FILE_NAME_5=559;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fconfigfile.h;0;4
 FILE_NAME_6=0;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fduplicator.h;0;4
 FILE_NAME_7=0;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fmain.h;0;4
 FILE_NAME_8=1233;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fsmtprelay.h;0;4
@@ -33,7 +33,7 @@ FILE_NAME_11=2141;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fli
 FILE_NAME_12=604;Make;0;16;1;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2FMakefile;0;4
 FILE_NAME_13=571;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fquote.h;0;4
 FILE_NAME_14=17195;C;0;16;0;1;0;%2Fusr%2Finclude%2Fstdlib.h;0;4
-FILE_NAME_15=75;None;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fmapfile.map;0;4
+FILE_NAME_15=51;None;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fmapfile.map;0;4
 FILE_NAME_16=4100;C;0;16;0;1;0;%2Fhome%2Folly%2FProjekte%2Fduplicator%2Fsrc%2Fquote.c;0;4
 
 [build-menu]
