@@ -13,6 +13,13 @@ enum t_configfileState {
 };
 typedef enum t_configfileState smtp_configfileState;
 
+enum t_mappingType {
+      cfgType_From = 1,
+      cfgType_To   = 2,
+      cfgType_Result = 3
+};
+typedef enum t_mappingType smtp_mappingType;
+
 struct t_mappingEntry {
     char* me_From;
     char* me_To;

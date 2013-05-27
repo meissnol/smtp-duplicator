@@ -38,7 +38,7 @@ void smtprelay_handleRelayMsg(struct SMTPSession *session) {
     //Diese procedure ist der Kontroll-Übergabe-Punkt an die
     //hierdrauf aufsetzende Software...
 
-	duplicator_handleRelayMsg(session);
+    duplicator_handleRelayMsg(session);
     //AFunc(session);
     //    crypto_handleRelayMsg(session);
     /*
@@ -383,12 +383,23 @@ int smtprelay_doprocessing (int sock) {
         currSession.event = hmsg_Unknown;
 
         switch (currentState) {
+            case ss_Helo:
+                currSession.initMappingData = 1;
+                smtprelay_relayMsg(&currSession);
+                break;
             case ss_MailFrom:
                 //printf("MAILFROM: wenn das akzeptiert wird, dann die configs durchgehen.\n");
                 switch (smtprelay_relayMsg(&currSession)) {
                     case sr_2:
-                        //printf("...und wurde akzeptiert\n");
-                        //findMatchingConfig(cfgType_FROM, buffer, config);
+                        fprintf(stdout,"...und wurde akzeptiert:%s\n", buffer);
+                        if (currSession.initMappingData) {
+                            if (currSession.matchingMappings) {
+                                 llFree(&(currSession.matchingMappings));
+                            }
+                            llInit(&currSession.matchingMappings, sizeof(smtp_mapEntry));
+                            currSession.initMappingData = 0;
+                        }
+                        findmatchingConfig(cfgType_From, &buffer[0]);
                         break;
                     default:
                         //printf("...und wurde leider nicht akzeptiert\n");
@@ -399,7 +410,9 @@ int smtprelay_doprocessing (int sock) {
                 //printf("RCPTTO: wenn das akzeptiert wird, dann die configs durchgehen.\n");
                 switch (smtprelay_relayMsg(&currSession)) {
                     case sr_2:
-                        //printf("...und wurde akzeptiert\n");
+                         /* dieser Punkt ist wunderbar geeignet um die LinkedList
+                         * der auf From- & To- passenden mappings zu initialisieren */
+                       //printf("...und wurde akzeptiert\n");
                         break;
                     default:
                         //printf("...und wurde leider nicht akzeptiert\n");
@@ -415,6 +428,7 @@ int smtprelay_doprocessing (int sock) {
                        //  tmpcfg->processThis = 0;
                        //  tmpcfg = tmpcfg->next;
                        //}
+                       currSession.initMappingData = 1;
                     default:
                         break;
                 }
@@ -464,4 +478,31 @@ int smtprelay_doprocessing (int sock) {
 
     close(ms_sockfd);
     return(currentState);
+}
+
+int findmatchingConfig(smtp_mappingType mapType, char *searchData) {
+    llItem *itm = smtpConfigFile->mappings->first;
+    smtp_mapEntry *e = (smtp_mapEntry*)malloc(sizeof(smtp_mapEntry));
+    char **r = NULL;
+    fprintf(stdout, "angekommen\n");
+    while (itm) {
+        llPop(smtpConfigFile->mappings, itm, e);
+        fprintf(stdout, "angekommen2: %s\n", e->me_From);
+        switch (mapType) {
+            case cfgType_From: r = &(e->me_From); break;
+            case cfgType_To:   r = &(e->me_To);   break;
+            default: r = NULL;
+        }
+        if (*r) {
+            fprintf(stdout, "suche: %s in %s\n", (*r), searchData);
+            //if (strcasecmp(searchData, *r) > 0) {
+                //Wenn gefunden, dann das itm an matchMappings anhängen:
+            //    fprintf(stdout, "gefunden: %s\n", (*r));
+            //    llPush(currSession.matchingMappings, e);
+            //}
+        }
+        itm = itm->next;
+    }
+    free(e);
+    return 0;
 }
