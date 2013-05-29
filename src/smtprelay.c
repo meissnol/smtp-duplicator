@@ -494,12 +494,12 @@ int findmatchingConfig(smtp_mappingType mapType, char *searchData) {
             default: r = NULL;
         }
         if (*r) {
-            fprintf(stdout, "suche: %s in %s\n", (*r), searchData);
-            //if (strcasecmp(searchData, *r) > 0) {
+            fprintf(stdout, "suche: '%s' in '%s'\n", (*r), searchData);
+            if (strstr(searchData, (*r))) { // || (**r == '*')) {
                 //Wenn gefunden, dann das itm an matchMappings anhängen:
-            //    fprintf(stdout, "gefunden: %s\n", (*r));
-            //    llPush(currSession.matchingMappings, e);
-            //}
+                fprintf(stdout, "gefunden: %s\n", (*r));
+                llPush(currSession.matchingMappings, e);
+            }
         }
         itm = itm->next;
     }
