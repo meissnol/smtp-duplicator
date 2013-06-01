@@ -10,6 +10,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#include "linkedlist.h"
+#include "configfile.h"
+
 enum SMTPState { ss_Unknown,
                  ss_Inititalize,
                  ss_Connect,
@@ -50,6 +53,8 @@ struct SMTPSession {
     struct sockaddr_storage *client_addr;
     enum stmpHandleMsg_Event event;
     int                     _sendDataOut;
+    uint                    initMappingData;
+    int                     sendDataToClientRequested;
 };
 
 /* globals */
@@ -77,5 +82,8 @@ void  smtprelay_cleanupLineBreak(char *str);
 enum SMTPState   smtprelay_getSmtpFromLine(char* line);
 enum SMTPRetCode smtprelay_getRetCodeFromLine(char *line);
 enum SMTPRetCode smtprelay_relayMsg(struct SMTPSession *session);
+
+int injectRecipients();
+int findmatchingConfig(smtp_mappingType mapType, char *searchData);
 
 #endif /* _smtprelay_h */

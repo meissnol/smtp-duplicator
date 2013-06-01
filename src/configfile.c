@@ -1,9 +1,13 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <syslog.h>
 #include <string.h>
 
 #include "configfile.h"
+#include "linkedlist.h"
+#include "quote.h"
 
 #define BUFSIZE 1024
 #define PORT "3490"    // the port users will be connecting to
@@ -17,7 +21,7 @@ smtp_configfileState textTo_smtp_configfileState(char *txt) {
   if (strcasecmp(txt, "FORWARD_PORT") ==0)   { result = cfs_fwd_port; }
   if (strcasecmp(txt, "FORWARD_ADDR") ==0)   { result = cfs_fwd_addr; }
   if (strcasecmp(txt, "MAPFILE")      ==0)   { result = cfs_mapfile; }
-  if (strcasecmp(txt, "  ")   ==0)   { result = cfs_Unknown; }
+  if (strcasecmp(txt, "  ")           ==0)   { result = cfs_Unknown; }
   return(result);
 }
 
@@ -28,6 +32,18 @@ void dump_configfile(smtp_configfile* cfg) {
   syslog(LOG_INFO, "fwd_addr:    %s\n", cfg->fwd_addr);
   syslog(LOG_INFO, "fwd_port:    %s\n", cfg->fwd_port);
   syslog(LOG_INFO, "mapfile:     %s\n", cfg->mapfile);
+  if (cfg->mappings) {
+      llItem * itm = cfg->mappings->first;
+      smtp_mapEntry* tmp = (smtp_mapEntry*)malloc(sizeof(smtp_mapEntry));
+      int i = 0;
+      while (itm) {
+          llPop(cfg->mappings, itm, tmp);
+          syslog(LOG_INFO, "mapping(%d): from='%s', to='%s', result='%s'\n",
+                           i++, tmp->me_From, tmp->me_To, tmp->me_Result);
+          itm = itm->next;
+      }
+      free(tmp);
+  }
 }
 
 void free_configfile(smtp_configfile* cfg) {
@@ -36,6 +52,7 @@ void free_configfile(smtp_configfile* cfg) {
   free(cfg->fwd_addr);
   free(cfg->fwd_port);
   free(cfg->mapfile);
+  llFree(&cfg->mappings);
   free(cfg);
   cfg=NULL;
 }
@@ -128,5 +145,67 @@ smtp_configfile* parse_configfile(char *filename) {
     result->listen_port = (char*)malloc(sizeof(char)*strlen(PORT)+1);
     strcpy(result->listen_port, PORT);
   }
+  if (result->mapfile) {
+      parse_config_mapfile(result);
+  }
   return(result);
 }
+
+int parse_config_mapfile(smtp_configfile* config) {
+  int result = -1;
+  if ((!config) || (!config->mapfile)) {
+      syslog(LOG_ERR, "no mapfile configured.");
+      exit(1);
+  }
+  FILE *cFile;
+  int nRet;
+  size_t *t = malloc(0);
+  char **gptr = malloc(sizeof(char*));
+  char **words = NULL;
+  uint i = 0;
+  *gptr = NULL;
+  char del[] = "\t\n \0";
+
+  llInit(&config->mappings, sizeof(smtp_mapEntry));
+
+  cFile = fopen(config->mapfile, "r");
+  if (!cFile) {
+    syslog(LOG_ERR, "error open mapfile %s", config->mapfile);
+    exit(1);
+  }
+  rewind(cFile);
+
+  while( (nRet=getline(gptr, t, cFile)) > 0) {
+      //fputs(*gptr,stdout);
+      chomp(*gptr);
+      int wrdcnt = splitQuotedStr(*gptr, del, (1 << FL_DLMFLD), -1, &words);
+      if (wrdcnt == 3) {
+        /* prepare the new llEntry */
+        smtp_mapEntry* tmp = (smtp_mapEntry*)malloc(sizeof(smtp_mapEntry));
+        tmp->me_From = (char*)malloc(sizeof(char)*strlen(words[0]));
+        strcpy(tmp->me_From, words[0]);
+        tmp->me_To  = (char*)malloc(sizeof(char)*strlen(words[1]));
+        strcpy(tmp->me_To, words[1]);
+        tmp->me_Result = (char*)malloc(sizeof(char)*strlen(words[2]));
+        strcpy(tmp->me_Result, words[2]);
+        tmp->match = cfgType_NONE;
+        llPush(config->mappings, tmp);
+        free(tmp);
+      } else {
+           syslog(LOG_WARNING, "WARNING: found malformed line in mapfile: %s\n", *gptr);
+      }
+      for (i = 0; i < wrdcnt; i++)
+        if (words[i]) free(words[i]);
+  }
+  free(t);
+  free(words);
+  fclose(cFile);
+  return result;
+}
+
+void chomp(char *str) {
+   size_t p=strlen(str);
+   /* '\n' mit '\0' überschreiben */
+   str[p-1]='\0';
+}
+
