@@ -38,7 +38,7 @@ void smtprelay_handleRelayMsg(struct SMTPSession *session) {
     //Diese procedure ist der Kontroll-Übergabe-Punkt an die
     //hierdrauf aufsetzende Software...
 
-    duplicator_handleRelayMsg(session);
+    //duplicator_handleRelayMsg(session);
     //AFunc(session);
     //    crypto_handleRelayMsg(session);
     /*
@@ -195,6 +195,7 @@ enum SMTPRetCode smtprelay_relayMsg(struct SMTPSession *session) {
     smtprelay_handleRelayMsg(session);
 
     //Write msg to Sock...
+    //fprintf(stdout, "RELAY: sending: %s\n", currSession.data);
     if (session->dataSize > 0) {
         nWrite = write(*session->serverSock, session->data, session->dataSize);
         if (nWrite < 0) {
@@ -229,12 +230,17 @@ enum SMTPRetCode smtprelay_relayMsg(struct SMTPSession *session) {
         session->currReply = smtprelay_getRetCodeFromLine(buffer);
         session->event = hmsg_RelayFromServerToClient;
         smtprelay_handleRelayMsg(session);
+        //fprintf(stdout, "RELAY: received: %s\n", buffer);
         //write answer to sSock:
-        nWrite = write(*session->clientSock, session->data, session->dataSize);
-        if (nWrite < 0) {
-            syslog(LOG_ERR, "ERROR writing answer to socket in smtprelay_relayMsg()");
-            perror("ERROR writing to socket");
-            exit(1);
+        if (session->sendDataToClientRequested) {
+            nWrite = write(*session->clientSock, session->data, session->dataSize);
+            if (nWrite < 0) {
+                syslog(LOG_ERR, "ERROR writing answer to socket in smtprelay_relayMsg()");
+                perror("ERROR writing to socket");
+                exit(1);
+            }
+        } else {
+            //fprintf(stdout, "RELAY: suppressing answer to client\n");
         }
     } while (buffer[3] == '-');
     //get the result...
@@ -296,6 +302,7 @@ int smtprelay_doprocessing (int sock) {
     currSession.currState = &currentState;
     currSession.clientSock= &sock;
     currSession.data = (char*)malloc(sizeof(char)*BUFSIZE + 1);
+    currSession.sendDataToClientRequested = 1;
     bzero(currSession.data, BUFSIZE + 1);
 
     newState = ss_Connect;
@@ -391,12 +398,9 @@ int smtprelay_doprocessing (int sock) {
                 //printf("MAILFROM: wenn das akzeptiert wird, dann die configs durchgehen.\n");
                 switch (smtprelay_relayMsg(&currSession)) {
                     case sr_2:
-                        fprintf(stdout,"...und wurde akzeptiert:%s\n", buffer);
+                        //fprintf(stdout,"...und wurde akzeptiert:%s\n", buffer);
                         if (currSession.initMappingData) {
-                            if (currSession.matchingMappings) {
-                                 llFree(&(currSession.matchingMappings));
-                            }
-                            llInit(&currSession.matchingMappings, sizeof(smtp_mapEntry));
+                            findmatchingConfig(cfgType_NONE, NULL); //cfgType_NONE: Reset all items
                             currSession.initMappingData = 0;
                         }
                         findmatchingConfig(cfgType_From, &buffer[0]);
@@ -413,6 +417,7 @@ int smtprelay_doprocessing (int sock) {
                          /* dieser Punkt ist wunderbar geeignet um die LinkedList
                          * der auf From- & To- passenden mappings zu initialisieren */
                        //printf("...und wurde akzeptiert\n");
+                        findmatchingConfig(cfgType_To, &buffer[0]);
                         break;
                     default:
                         //printf("...und wurde leider nicht akzeptiert\n");
@@ -454,8 +459,11 @@ int smtprelay_doprocessing (int sock) {
                  * von uns weitere Daten empfangen moechte. Das sagt er uns
                  * durch einen 3xx-reply
                  */
+                injectRecipients();
+                //fprintf(stdout, "++>sending: %s", currSession.data);
                 switch (smtprelay_relayMsg(&currSession)) {
                     case sr_3:
+                        /* check if we have to inject further recipients... */
                         smtprelay_setState(ss_Data);
                         break;
                     default:
@@ -480,29 +488,58 @@ int smtprelay_doprocessing (int sock) {
     return(currentState);
 }
 
+int injectRecipients() {
+    llItem *itm = smtpConfigFile->mappings->first;
+    smtp_mapEntry *e;
+    char *orig = (char *)malloc(sizeof(char) * strlen(currSession.data)+1);
+    memcpy(orig, currSession.data, strlen(currSession.data)+1);
+    //fprintf(stdout, "orig=%s\n", orig);
+    while (itm) {
+        e = (smtp_mapEntry *)itm->data_ptr;
+        //fprintf(stdout, "dump: %s: %d\n", e->me_Result, e->match);
+        if ( ((e->match & cfgType_From) == cfgType_From) &&
+             ((e->match & cfgType_To)   == cfgType_To) ) {
+                sprintf(currSession.data, "RCPT TO: %s\r\n", e->me_Result);
+                currSession.dataSize = strlen(currSession.data);
+                //fprintf(stdout, " -->sending: %s", currSession.data);
+                currSession.sendDataToClientRequested = 0;
+                smtprelay_relayMsg(&currSession);
+                currSession.sendDataToClientRequested = 1;
+        }
+        itm = itm->next;
+    }
+    memcpy(currSession.data, orig, strlen(orig)+1);
+    currSession.dataSize = strlen(currSession.data);
+    free(orig);
+    return(0);
+}
+
+
 int findmatchingConfig(smtp_mappingType mapType, char *searchData) {
     llItem *itm = smtpConfigFile->mappings->first;
-    smtp_mapEntry *e = (smtp_mapEntry*)malloc(sizeof(smtp_mapEntry));
+    smtp_mapEntry *e = NULL;
     char **r = NULL;
-    fprintf(stdout, "angekommen\n");
+
     while (itm) {
-        llPop(smtpConfigFile->mappings, itm, e);
-        fprintf(stdout, "angekommen2: %s\n", e->me_From);
-        switch (mapType) {
-            case cfgType_From: r = &(e->me_From); break;
-            case cfgType_To:   r = &(e->me_To);   break;
-            default: r = NULL;
-        }
-        if (*r) {
-            fprintf(stdout, "suche: '%s' in '%s'\n", (*r), searchData);
-            if (strstr(searchData, (*r))) { // || (**r == '*')) {
-                //Wenn gefunden, dann das itm an matchMappings anhängen:
-                fprintf(stdout, "gefunden: %s\n", (*r));
-                llPush(currSession.matchingMappings, e);
+        e = (smtp_mapEntry*)itm->data_ptr;
+        if (mapType == cfgType_NONE) {
+            //Wenn cfgType_NONE, dann das itm einfach zurücksetzen
+            e->match = cfgType_NONE;
+        } else {
+            switch (mapType) {
+                case cfgType_From: r = &(e->me_From); break;
+                case cfgType_To:   r = &(e->me_To);   break;
+                default: r = NULL;
+            }
+            if (*r) {
+                if (strstr(searchData, (*r)) || (**r == '*')) {
+                    //Wenn gefunden, dann das itm markieren:
+                    e->match |= mapType;
+                    //fprintf(stdout, "gefunden: %s (in %s mit: %d)\n", (*r), e->me_Result, e->match);
+                }
             }
         }
         itm = itm->next;
     }
-    free(e);
     return 0;
 }

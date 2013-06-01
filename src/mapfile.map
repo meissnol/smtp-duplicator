@@ -1,2 +1,3 @@
-from_1      to_1        resultRecip_1
-line_2      *        resultRecip_2
+from_1      to_1       oliver+resultRecip_1
+line_2      *          oliver+resultRecip_2
+*           oliver     oliver+resultRecip_3

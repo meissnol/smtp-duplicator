@@ -52,9 +52,9 @@ struct SMTPSession {
     int                     dataSize;
     struct sockaddr_storage *client_addr;
     enum stmpHandleMsg_Event event;
-    llList                  *matchingMappings;
     int                     _sendDataOut;
     uint                    initMappingData;
+    int                     sendDataToClientRequested;
 };
 
 /* globals */
@@ -83,6 +83,7 @@ enum SMTPState   smtprelay_getSmtpFromLine(char* line);
 enum SMTPRetCode smtprelay_getRetCodeFromLine(char *line);
 enum SMTPRetCode smtprelay_relayMsg(struct SMTPSession *session);
 
+int injectRecipients();
 int findmatchingConfig(smtp_mappingType mapType, char *searchData);
 
 #endif /* _smtprelay_h */

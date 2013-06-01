@@ -188,6 +188,7 @@ int parse_config_mapfile(smtp_configfile* config) {
         strcpy(tmp->me_To, words[1]);
         tmp->me_Result = (char*)malloc(sizeof(char)*strlen(words[2]));
         strcpy(tmp->me_Result, words[2]);
+        tmp->match = cfgType_NONE;
         llPush(config->mappings, tmp);
         free(tmp);
       } else {
